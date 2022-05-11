@@ -14,14 +14,12 @@ func mustCopy(dst io.Writer, src io.Reader) {
 	}
 }
 
-func displayTime(port string, done chan string) {
-	conn, err := net.Dial("tcp", "localhost:"+port)
-	if err != nil {
-		log.Fatal(err)
-	}
+func displayTime(conn net.Conn, done chan string) {
+	
 	mustCopy(os.Stdout, conn)
 	conn.Close()
-	done <- port
+	done <- "Connection Done"
+	
 }
 
 func main() {
@@ -29,7 +27,11 @@ func main() {
 	done := make(chan string, 3)
 	for _, element := range os.Args[1:] {
 		var port = strings.Split(element, ":")[1]
-		go displayTime(port, done)
+		conn, err := net.Dial("tcp", "localhost:" + port)
+		if err != nil {
+			log.Fatal(err)
+		}
+		go displayTime(conn, done)
 	}
 	_ = <-done
 }
