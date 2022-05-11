@@ -2,34 +2,71 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net"
+	"os"
 	"time"
 )
 
+func TimeIn(t time.Time, name string) (time.Time, error) {
+	loc, err := time.LoadLocation(name)
+	if err == nil {
+		t = t.In(loc)
+	}
+	return t, err
+}
+
 func handleConn(c net.Conn) {
 	defer c.Close()
+
 	for {
-		_, err := io.WriteString(c, time.Now().Format("15:04:05\n"))
-		if err != nil {
-			return // e.g., client disconnected
+		var timeObj, timeErr = TimeIn(time.Now(), os.Getenv("TZ"))
+		if timeErr == nil {
+			_, err := io.WriteString(c, os.Getenv("TZ")+"\t= "+timeObj.Local().Format("15:04:05\n"))
+			if err != nil {
+				return // e.g., client disconnected
+			}
+			time.Sleep(1 * time.Second)
 		}
-		time.Sleep(1 * time.Second)
 	}
+
 }
 
 func main() {
-	listener, err := net.Listen("tcp", "localhost:9090")
+
+	if len(os.Args) < 3 {
+		fmt.Println("Usage: go run clockServer.go -port <portNum>")
+		fmt.Println()
+		os.Exit(-1)
+	}
+
+	var portNum = flag.String("port", "9090", "Port specified for clock connection")
+	flag.Parse()
+
+
+	var _, timeErr = TimeIn(time.Now(), os.Getenv("TZ"))
+	if timeErr != nil {
+		fmt.Println("Invalid timezone")
+		fmt.Println()
+		os.Exit(-1)
+	}
+
+	listener, err := net.Listen("tcp", "localhost:"+*portNum)
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Print(err) // e.g., connection aborted
 			continue
 		}
+		
 		go handleConn(conn) // handle connections concurrently
+		
 	}
 }
