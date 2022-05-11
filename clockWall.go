@@ -19,7 +19,7 @@ func displayTime(conn net.Conn, done chan string) {
 	mustCopy(os.Stdout, conn)
 	conn.Close()
 	done <- "Connection Done"
-	
+
 }
 
 func main() {

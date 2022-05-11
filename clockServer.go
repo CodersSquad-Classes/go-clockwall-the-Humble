@@ -30,10 +30,6 @@ func handleConn(c net.Conn) {
 				return // e.g., client disconnected
 			}
 			time.Sleep(1 * time.Second)
-		} else {
-			fmt.Println("Invalid timezone")
-			fmt.Println()
-			os.Exit(-1)
 		}
 	}
 
@@ -50,6 +46,14 @@ func main() {
 	var portNum = flag.String("port", "9090", "Port specified for clock connection")
 	flag.Parse()
 
+
+	var _, timeErr = TimeIn(time.Now(), os.Getenv("TZ"))
+	if timeErr != nil {
+		fmt.Println("Invalid timezone")
+		fmt.Println()
+		os.Exit(-1)
+	}
+
 	listener, err := net.Listen("tcp", "localhost:"+*portNum)
 	if err != nil {
 		log.Fatal(err)
@@ -61,6 +65,8 @@ func main() {
 			log.Print(err) // e.g., connection aborted
 			continue
 		}
+		
 		go handleConn(conn) // handle connections concurrently
+		
 	}
 }
