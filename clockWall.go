@@ -15,12 +15,12 @@ func mustCopy(dst io.Writer, src io.Reader) {
 }
 
 func displayTime(port string, done chan string) {
-
 	conn, err := net.Dial("tcp", "localhost:"+port)
 	if err != nil {
 		log.Fatal(err)
 	}
 	mustCopy(os.Stdout, conn)
+	conn.Close()
 	done <- port
 }
 
